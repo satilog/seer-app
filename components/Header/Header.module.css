@@ -1,0 +1,35 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px; /* Fixed height */
+    padding: 0 1rem;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+  
+  .pair {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .logo {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+  
+  .title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-left: 0.5rem; /* Adjusted for spacing between logo and title */
+  }
+  
+  .closeButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  
