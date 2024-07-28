@@ -9,37 +9,89 @@ import { RiLinkM } from "react-icons/ri";
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
 
+export const backendUrl = 'http://127.0.0.1:5000';
+
 const Body: React.FC = () => {
   const [chatContent, setChatContent] = useState('');
   const [fullText, setFullText] = useState('');
   const [typingFinished, setTypingFinished] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const fetchLLMOutput = async () => {
+      console.log("fetchLLMOutput called");
+      // @ts-ignore
+      chrome.tabs.query({ active: true, currentWindow: true }, async function (tabs) {
+        if (tabs.length === 0) {
+          console.error("No active tabs found.");
+          return;
+        }
+        const currentUrl = tabs[0].url;
+        console.log("Current tab URL:", currentUrl);
+
+        try {
+          const response = await fetch(`${backendUrl}/crawl`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ start_url: currentUrl }),
+          });
+          const data = await response.json();
+          console.log("Response from backend:", data);
+
+          // Assuming the response contains HTML content
+          setFullText(data.responseText);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      });
+
       // Simulate fetching data from LLM
-      const response = `<p>This is the output from ChatGPT, including code blocks and explanations.</p>
+      const simulatedResponse = `<p>This is the output from ChatGPT, including code blocks and explanations.</p>
                         <pre><code>const example = 'code block';</code></pre>`;
-      setFullText(response);
+      setFullText(simulatedResponse);
     };
+
     fetchLLMOutput();
   }, []);
 
-  useEffect(() => {
-    if (fullText) {
-      let currentIndex = 0;
-      const intervalId = setInterval(() => {
-        if (currentIndex < fullText.length) {
-          setChatContent((prev) => prev + fullText[currentIndex]);
-          currentIndex++;
-        } else {
-          clearInterval(intervalId);
-          setTypingFinished(true);
-          setChatContent(fullText);
-        }
-      }, 10); // Adjust typing speed here
-      return () => clearInterval(intervalId);
+  // useEffect(() => {
+  //   if (fullText) {
+  //     setChatContent(''); // Reset chat content before typing
+  //     let currentIndex = 0;
+  //     const intervalId = setInterval(() => {
+  //       if (currentIndex < fullText.length) {
+  //         setChatContent((prev) => prev + fullText[currentIndex]);
+  //         currentIndex++;
+  //       } else {
+  //         clearInterval(intervalId);
+  //         setTypingFinished(true);
+  //       }
+  //     }, 10); // Adjust typing speed here
+  //     return () => clearInterval(intervalId);
+  //   }
+  // }, [fullText]);
+
+  const handleQuerySubmit = async () => {
+    if (!query) return;
+
+    try {
+      const response = await fetch(`${backendUrl}/search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
+      const data = await response.json();
+      console.log("Response from backend:", data);
+      setFullText(data.answer); // Update fullText with the new response
+      setChatContent(data.answer); // Update chat content with the new response
+    } catch (error) {
+      console.error("Error fetching data:", error);
     }
-  }, [fullText]);
+  }
 
   return (
     <div className={styles.body}>
@@ -68,8 +120,10 @@ const Body: React.FC = () => {
         <input
           className={styles.queryInput}
           placeholder="Enter your query here"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
-        <button className={styles.queryButton}>
+        <button onClick={handleQuerySubmit} className={styles.queryButton}>
           <FaArrowUp color="#f0933f" size={20} />
         </button>
       </div>
